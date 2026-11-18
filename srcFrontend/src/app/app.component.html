@@ -1,0 +1,171 @@
+<mat-toolbar color="primary" class="app-toolbar">
+  <div class="toolbar-title">
+    <mat-icon>folder_shared</mat-icon>
+    <span>FileSharer</span>
+    <span class="subtitle">Local Network File Server</span>
+  </div>
+  <button mat-stroked-button class="refresh-btn" (click)="loadFiles()" [disabled]="isLoading">
+    <mat-icon>refresh</mat-icon>
+    Refresh
+  </button>
+</mat-toolbar>
+
+<main class="container">
+  <!-- Upload Control Card (Select and Confirm) -->
+  <mat-card class="upload-card" appearance="outlined">
+    <mat-card-header>
+      <mat-icon mat-card-avatar class="card-header-icon">cloud_upload</mat-icon>
+      <mat-card-title>Upload New File</mat-card-title>
+      <mat-card-subtitle>Select a file from your device and confirm to upload it to the shared server folder</mat-card-subtitle>
+    </mat-card-header>
+
+    <mat-card-content>
+      <div class="upload-controls">
+        <input
+          #fileInput
+          type="file"
+          hidden
+          (change)="onFileSelected($event)"
+        />
+
+        <button
+          mat-stroked-button
+          color="primary"
+          type="button"
+          (click)="fileInput.click()"
+          [disabled]="isUploading"
+        >
+          <mat-icon>attach_file</mat-icon>
+          Select File
+        </button>
+
+        @if (selectedFile) {
+          <div class="selected-file-info">
+            <mat-icon class="file-icon">insert_drive_file</mat-icon>
+            <div class="file-details">
+              <span class="selected-name">{{ selectedFile.name }}</span>
+              <span class="selected-meta">
+                Extension: <strong>{{ getFileExtension(selectedFile.name) }}</strong> &bull;
+                Size: <strong>{{ formatFileSize(selectedFile.size) }}</strong>
+              </span>
+            </div>
+            <button
+              mat-icon-button
+              type="button"
+              matTooltip="Clear selection"
+              (click)="clearSelectedFile()"
+              [disabled]="isUploading"
+            >
+              <mat-icon>close</mat-icon>
+            </button>
+          </div>
+        } @else {
+          <span class="no-file-text">No file selected</span>
+        }
+
+        <button
+          mat-flat-button
+          color="primary"
+          type="button"
+          class="confirm-upload-btn"
+          [disabled]="!selectedFile || isUploading"
+          (click)="confirmUpload()"
+        >
+          <mat-icon>check_circle</mat-icon>
+          Confirm Upload
+        </button>
+      </div>
+
+      @if (isUploading) {
+        <div class="progress-wrapper">
+          <mat-progress-bar mode="determinate" [value]="uploadProgress"></mat-progress-bar>
+          <span class="progress-label">Uploading... {{ uploadProgress }}%</span>
+        </div>
+      }
+    </mat-card-content>
+  </mat-card>
+
+  <!-- Remote Server Files Grid Card -->
+  <mat-card class="files-card" appearance="outlined">
+    <mat-card-header>
+      <mat-icon mat-card-avatar class="card-header-icon">storage</mat-icon>
+      <mat-card-title>Files on Remote Server ({{ files.length }})</mat-card-title>
+      <mat-card-subtitle>View, download, or delete files stored on the server</mat-card-subtitle>
+    </mat-card-header>
+
+    @if (isLoading) {
+      <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+    }
+
+    <mat-card-content>
+      @if (files.length > 0) {
+        <div class="table-container">
+          <table mat-table [dataSource]="files" class="files-table">
+            <!-- File Name Column -->
+            <ng-container matColumnDef="fileName">
+              <th mat-header-cell *matHeaderCellDef>File Name</th>
+              <td mat-cell *matCellDef="let file" class="file-name-cell">
+                <div class="file-name-content">
+                  <mat-icon class="row-file-icon">description</mat-icon>
+                  <span>{{ file.fileName }}</span>
+                </div>
+              </td>
+            </ng-container>
+
+            <!-- File Extension Column -->
+            <ng-container matColumnDef="fileExtension">
+              <th mat-header-cell *matHeaderCellDef>File Extension</th>
+              <td mat-cell *matCellDef="let file">
+                <span class="ext-badge">{{ file.fileExtension }}</span>
+              </td>
+            </ng-container>
+
+            <!-- File Size Column -->
+            <ng-container matColumnDef="fileSize">
+              <th mat-header-cell *matHeaderCellDef>File Size</th>
+              <td mat-cell *matCellDef="let file">
+                <span class="size-primary">{{ formatFileSize(file.fileSize) }}</span>
+                <span class="size-bytes">({{ file.fileSize | number }} bytes)</span>
+              </td>
+            </ng-container>
+
+            <!-- Actions Column (Download & Delete with confirmation) -->
+            <ng-container matColumnDef="actions">
+              <th mat-header-cell *matHeaderCellDef class="actions-header">Actions</th>
+              <td mat-cell *matCellDef="let file" class="actions-cell">
+                <button
+                  mat-stroked-button
+                  color="primary"
+                  (click)="downloadFile(file)"
+                  matTooltip="Download file from server"
+                >
+                  <mat-icon>download</mat-icon>
+                  Download
+                </button>
+
+                <button
+                  mat-stroked-button
+                  color="warn"
+                  (click)="confirmAndDeleteFile(file)"
+                  matTooltip="Delete file from remote server"
+                >
+                  <mat-icon>delete_outline</mat-icon>
+                  Delete
+                </button>
+              </td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+            <tr mat-row *matRowDef="let row; columns: displayedColumns;" class="file-row"></tr>
+          </table>
+        </div>
+      } @else if (!isLoading) {
+        <div class="empty-state">
+          <mat-icon class="empty-icon">folder_open</mat-icon>
+          <h3>No files on the server yet</h3>
+          <p>Use the "Select File" and "Confirm Upload" controls above to upload your first file.</p>
+        </div>
+      }
+    </mat-card-content>
+  </mat-card>
+</main>

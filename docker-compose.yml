@@ -1,0 +1,26 @@
+services:
+  backend:
+    build:
+      context: ./srcBackend
+      dockerfile: Dockerfile
+    container_name: filesharer-backend
+    ports:
+      - "5000:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_URLS=http://+:8080
+      - FileStorage__StoragePath=/app/SharedFiles
+    volumes:
+      - ${LOCAL_STORAGE_FOLDER:-./SharedFiles}:/app/SharedFiles
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./srcFrontend
+      dockerfile: Dockerfile
+    container_name: filesharer-frontend
+    ports:
+      - "4200:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
